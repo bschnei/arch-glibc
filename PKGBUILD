@@ -121,7 +121,6 @@ check() (
   sed -i 's/-Werror=format-security/-Wformat-security/' config.make   # failure to build testsuite
   sed -i '/CFLAGS/s/-fno-plt//' config.make                           # 16 failures
   sed -i '/CFLAGS/s/-fexceptions//' config.make                       # 1 failure
-  LDFLAGS=${LDFLAGS/-Wl,-z,now/}                                         # 10 failures
 
   # The following tests fail due to restrictions in the Arch build system
   # The correct fix is to add the following to the systemd-nspawn call:

@@ -159,7 +159,7 @@ package_glibc() {
 
   cd glibc
 
-  install -dm755 "${pkgdir}"/usr/lib/{locale,systemd/system,tmpfiles.d}
+  install -dm755 "${pkgdir}"/usr/lib/locale
 
   install -m644 posix/gai.conf "${pkgdir}"/etc/gai.conf
 

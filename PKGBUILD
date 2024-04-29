@@ -195,6 +195,11 @@ package_lib32-glibc() {
 
   cd lib32-glibc-build
 
+  # make automatically re-generates the gconv modules cache
+  # if the file is present
+  install -dm755 "${pkgdir}"/usr/lib32/gconv
+  touch "${pkgdir}"/usr/lib32/gconv/gconv-modules.cache
+
   make DESTDIR="${pkgdir}" install
   rm -rf "${pkgdir}"/{etc,sbin,usr/{bin,sbin,share},var}
 

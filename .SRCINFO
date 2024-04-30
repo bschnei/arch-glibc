@@ -39,6 +39,7 @@ pkgname = glibc
 
 pkgname = lib32-glibc
 	pkgdesc = GNU C Library (32-bit)
+	install = lib32-glibc.install
 	depends = glibc=2.39
 	options = staticlibs
 	options = !lto

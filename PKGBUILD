@@ -146,11 +146,6 @@ package_glibc() {
   backup=(etc/gai.conf
           etc/locale.gen)
 
-  # make automatically re-generates the gconv modules cache
-  # if the file is present
-  install -dm755 "${pkgdir}"/usr/lib/gconv
-  touch "${pkgdir}"/usr/lib/gconv/gconv-modules.cache
-
   make -C glibc-build DESTDIR="${pkgdir}" install
   rm -f "${pkgdir}"/etc/ld.so.cache
 
@@ -192,6 +187,7 @@ package_lib32-glibc() {
   pkgdesc='GNU C Library (32-bit)'
   depends=("glibc=$pkgver")
   options+=('!emptydirs')
+  install=lib32-glibc.install
 
   cd lib32-glibc-build
 

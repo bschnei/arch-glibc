@@ -66,7 +66,7 @@ build() {
     # Credits @allanmcrae
     # https://github.com/allanmcrae/toolchain/blob/f18604d70c5933c31b51a320978711e4e6791cf1/glibc/PKGBUILD
     # remove fortify for building libraries
-    # CFLAGS=${CFLAGS/-Wp,-D_FORTIFY_SOURCE=2/}
+    CFLAGS=${CFLAGS/-Wp,-D_FORTIFY_SOURCE=3/}
 
     "${srcdir}"/glibc/configure \
         --libdir=/usr/lib \

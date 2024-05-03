@@ -85,6 +85,10 @@ build() {
     export CC="gcc -m32 -mstackrealign"
     export CXX="g++ -m32 -mstackrealign"
 
+    # remove frame pointer flags due to crashes of nvidia driver on steam starts
+    # See https://gitlab.archlinux.org/archlinux/packaging/packages/glibc/-/issues/10
+    CFLAGS=${CFLAGS/-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer/}
+
     echo "slibdir=/usr/lib32" >> configparms
     echo "rtlddir=/usr/lib32" >> configparms
     echo "sbindir=/usr/bin" >> configparms

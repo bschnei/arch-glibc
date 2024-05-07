@@ -31,6 +31,11 @@ b2sums=('2466e8da98fd97cce07cd55fb836a56209d0e2d4f7b05a308dfe848fd7fa1398c838659
         'a6a5e2f2a627cc0d13d11a82458cfd0aa75ec1c5a3c7647e5d5a3bb1d4c0770887a3909bfda1236803d5bc9801bfd6251e13483e9adf797e4725332cd0d91a0e'
         '214e995e84b342fe7b2a7704ce011b7c7fc74c2971f98eeb3b4e677b99c860addc0a7d91b8dc0f0b8be7537782ee331999e02ba48f4ccc1c331b60f27d715678')
 
+pkgver() {
+  cd glibc
+  echo "$(git describe --tags | sed 's/[^-]*-//;s/[^-]*-/&r/;s/-/+/g')"
+}
+
 prepare() {
   mkdir -p glibc-build lib32-glibc-build
 

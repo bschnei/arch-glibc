@@ -21,6 +21,7 @@ source=("git+https://sourceware.org/git/glibc.git#commit=${_commit}"
         locale-gen
         lib32-glibc.conf
         sdt.h sdt-config.h
+        0001-misc-Add-support-for-Linux-uio.h-RWF_NOAPPEND-flag.patch
 )
 validpgpkeys=(7273542B39962DF7B299931416792B4EA25340F8 # Carlos O'Donell
               BC7C7372637EC10C57D7AA6579C43DFBF1CF2187) # Siddhesh Poyarekar
@@ -29,7 +30,8 @@ b2sums=('a37822e85d99b01b289950bbc3a6ba3c9f88cf2aafe6510a4e3aa9666c35ab4279377b8
         '04fbb3b0b28705f41ccc6c15ed5532faf0105370f22133a2b49867e790df0491f5a1255220ff6ebab91a462f088d0cf299491b3eb8ea53534cb8638a213e46e3'
         '7c265e6d36a5c0dff127093580827d15519b6c7205c2e1300e82f0fb5b9dd00b6accb40c56581f18179c4fbbc95bd2bf1b900ace867a83accde0969f7b609f8a'
         'a6a5e2f2a627cc0d13d11a82458cfd0aa75ec1c5a3c7647e5d5a3bb1d4c0770887a3909bfda1236803d5bc9801bfd6251e13483e9adf797e4725332cd0d91a0e'
-        '214e995e84b342fe7b2a7704ce011b7c7fc74c2971f98eeb3b4e677b99c860addc0a7d91b8dc0f0b8be7537782ee331999e02ba48f4ccc1c331b60f27d715678')
+        '214e995e84b342fe7b2a7704ce011b7c7fc74c2971f98eeb3b4e677b99c860addc0a7d91b8dc0f0b8be7537782ee331999e02ba48f4ccc1c331b60f27d715678'
+        '839e24780b6a5ac3a59db82fc975ac5eacdd77feb63cd8d26cce34348d0f4b819114069d59fa5a758b03582d626537da07a60e553af043c73f51da5586aa6027')
 
 pkgver() {
   cd glibc
@@ -41,6 +43,9 @@ prepare() {
 
   [[ -d glibc-$pkgver ]] && ln -s glibc-$pkgver glibc
   cd glibc
+
+  # fix tests with kernel 6.9
+  patch -Np1 < ../0001-misc-Add-support-for-Linux-uio.h-RWF_NOAPPEND-flag.patch
 
 }
 

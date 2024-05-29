@@ -9,7 +9,7 @@
 pkgbase=glibc
 pkgname=(glibc lib32-glibc glibc-locales)
 pkgver=2.39+r52+gf8e4623421
-_commit=f8e462342189525e4605cf233b8f798d1c7f398d
+_commit=70f560fc22212f733647c9121c26bbb2307f2e10
 pkgrel=1
 arch=(x86_64)
 url='https://www.gnu.org/software/libc'
@@ -21,7 +21,6 @@ source=("git+https://sourceware.org/git/glibc.git#commit=${_commit}"
         locale-gen
         lib32-glibc.conf
         sdt.h sdt-config.h
-        0001-misc-Add-support-for-Linux-uio.h-RWF_NOAPPEND-flag.patch
 )
 validpgpkeys=(7273542B39962DF7B299931416792B4EA25340F8 # Carlos O'Donell
               BC7C7372637EC10C57D7AA6579C43DFBF1CF2187) # Siddhesh Poyarekar
@@ -43,10 +42,6 @@ prepare() {
 
   [[ -d glibc-$pkgver ]] && ln -s glibc-$pkgver glibc
   cd glibc
-
-  # fix tests with kernel 6.9
-  patch -Np1 < ../0001-misc-Add-support-for-Linux-uio.h-RWF_NOAPPEND-flag.patch
-
 }
 
 build() {

@@ -7,14 +7,14 @@
 # NOTE: valgrind requires rebuilt with each major glibc version
 
 pkgbase=glibc
-pkgname=(glibc lib32-glibc glibc-locales)
+pkgname=(glibc glibc-locales)
 pkgver=2.41+r9+ga900dbaf70f0
 _commit=a900dbaf70f0a957f56b52caa69173592ad7596e
 pkgrel=1
-arch=(x86_64)
+arch=(aarch64)
 url='https://www.gnu.org/software/libc'
 license=(GPL-2.0-or-later LGPL-2.1-or-later)
-makedepends=(git gd lib32-gcc-libs python)
+makedepends=(git gd python)
 options=(staticlibs !lto)
 source=("git+https://sourceware.org/git/glibc.git#commit=${_commit}"
         locale.gen.txt
@@ -63,6 +63,9 @@ build() {
   # actual builds (support is built-in via --enable-fortify-source).
   CFLAGS=${CFLAGS/-Wp,-D_FORTIFY_SOURCE=3/}
 
+  [[ $CARCH == "aarch64" ]] && CFLAGS=${CFLAGS/-fno-plt/}
+  [[ $CARCH == "aarch64" ]] && _configure_flags+=(--enable-memory-tagging)
+
   (
     cd glibc-build
 
@@ -81,29 +84,6 @@ build() {
 
     # build info pages manually for reproducibility
     make info
-  )
-
-  (
-    cd lib32-glibc-build
-    export CC="gcc -m32 -mstackrealign"
-    export CXX="g++ -m32 -mstackrealign"
-
-    # remove frame pointer flags due to crashes of nvidia driver on steam starts
-    # See https://gitlab.archlinux.org/archlinux/packaging/packages/glibc/-/issues/10
-    CFLAGS=${CFLAGS/-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer/}
-
-    echo "slibdir=/usr/lib32" >> configparms
-    echo "rtlddir=/usr/lib32" >> configparms
-    echo "sbindir=/usr/bin" >> configparms
-    echo "rootsbindir=/usr/bin" >> configparms
-
-    "${srcdir}"/glibc/configure \
-        --host=i686-pc-linux-gnu \
-        --libdir=/usr/lib32 \
-        --libexecdir=/usr/lib32 \
-        "${_configure_flags[@]}"
-
-    make -O
   )
 
   # pregenerate locales here instead of in package
@@ -187,31 +167,6 @@ package_glibc() {
   # libraries too. Useful for gdb's catch command.
   install -Dm644 "${srcdir}"/sdt.h "${pkgdir}"/usr/include/sys/sdt.h
   install -Dm644 "${srcdir}"/sdt-config.h "${pkgdir}"/usr/include/sys/sdt-config.h
-}
-
-package_lib32-glibc() {
-  pkgdesc='GNU C Library (32-bit)'
-  depends=("glibc=$pkgver")
-  options+=('!emptydirs')
-  install=lib32-glibc.install
-
-  cd lib32-glibc-build
-
-  make DESTDIR="${pkgdir}" install
-  rm -rf "${pkgdir}"/{etc,sbin,usr/{bin,sbin,share},var}
-
-  # We need to keep 32 bit specific header files
-  find "${pkgdir}"/usr/include -type f -not -name '*-32.h' -delete
-
-  # Dynamic linker
-  install -d "${pkgdir}"/usr/lib
-  ln -s ../lib32/ld-linux.so.2 "${pkgdir}"/usr/lib/
-
-  # Add lib32 paths to the default library search path
-  install -Dm644 "${srcdir}"/lib32-glibc.conf "${pkgdir}"/etc/ld.so.conf.d/lib32-glibc.conf
-
-  # Symlink /usr/lib32/locale to /usr/lib/locale
-  ln -s ../lib/locale "${pkgdir}"/usr/lib32/locale
 }
 
 package_glibc-locales() {

@@ -7,19 +7,18 @@
 # NOTE: valgrind requires rebuilt with each major glibc version
 
 pkgbase=glibc
-pkgname=(glibc lib32-glibc glibc-locales)
+pkgname=(glibc glibc-locales)
 pkgver=2.41+r9+ga900dbaf70f0
 _commit=a900dbaf70f0a957f56b52caa69173592ad7596e
 pkgrel=1
-arch=(x86_64)
+arch=(aarch64)
 url='https://www.gnu.org/software/libc'
 license=(GPL-2.0-or-later LGPL-2.1-or-later)
-makedepends=(git gd lib32-gcc-libs python)
+makedepends=(git gd python)
 options=(staticlibs !lto)
 source=("git+https://sourceware.org/git/glibc.git#commit=${_commit}"
         locale.gen.txt
         locale-gen
-        lib32-glibc.conf
         sdt.h sdt-config.h
 )
 validpgpkeys=(7273542B39962DF7B299931416792B4EA25340F8 # Carlos O'Donell
@@ -27,7 +26,6 @@ validpgpkeys=(7273542B39962DF7B299931416792B4EA25340F8 # Carlos O'Donell
 b2sums=('c1b5cc81db71ce62c14864c74c0df39f7f5b2db503a179da79fc5a40a434051f8fc25754f9937a056228e92cf2857c98a98432dc145c0ef646d22c7cb59fd256'
         'c859bf2dfd361754c9e3bbd89f10de31f8e81fd95dc67b77d10cb44e23834b096ba3caa65fbc1bd655a8696c6450dfd5a096c476b3abf5c7e125123f97ae1a72'
         '04fbb3b0b28705f41ccc6c15ed5532faf0105370f22133a2b49867e790df0491f5a1255220ff6ebab91a462f088d0cf299491b3eb8ea53534cb8638a213e46e3'
-        '7c265e6d36a5c0dff127093580827d15519b6c7205c2e1300e82f0fb5b9dd00b6accb40c56581f18179c4fbbc95bd2bf1b900ace867a83accde0969f7b609f8a'
         'a6a5e2f2a627cc0d13d11a82458cfd0aa75ec1c5a3c7647e5d5a3bb1d4c0770887a3909bfda1236803d5bc9801bfd6251e13483e9adf797e4725332cd0d91a0e'
         '214e995e84b342fe7b2a7704ce011b7c7fc74c2971f98eeb3b4e677b99c860addc0a7d91b8dc0f0b8be7537782ee331999e02ba48f4ccc1c331b60f27d715678')
 
@@ -37,7 +35,7 @@ pkgver() {
 }
 
 prepare() {
-  mkdir -p glibc-build lib32-glibc-build
+  mkdir -p glibc-build
 
   [[ -d glibc-$pkgver ]] && ln -s glibc-$pkgver glibc
   cd glibc
@@ -50,7 +48,7 @@ build() {
       --with-bugurl=https://gitlab.archlinux.org/archlinux/packaging/packages/glibc/-/issues
       --enable-bind-now
       --enable-fortify-source
-      --enable-kernel=4.4
+      --enable-kernel=5.4
       --enable-multi-arch
       --enable-stack-protector=strong
       --enable-systemtap
@@ -62,6 +60,9 @@ build() {
   # _FORTIFY_SOURCE=3 causes testsuite build failure and is unnecessary during
   # actual builds (support is built-in via --enable-fortify-source).
   CFLAGS=${CFLAGS/-Wp,-D_FORTIFY_SOURCE=3/}
+
+  [[ $CARCH == "aarch64" ]] && CFLAGS=${CFLAGS/-fno-plt/}
+  [[ $CARCH == "aarch64" ]] && _configure_flags+=(--enable-memory-tagging)
 
   (
     cd glibc-build
@@ -81,29 +82,6 @@ build() {
 
     # build info pages manually for reproducibility
     make info
-  )
-
-  (
-    cd lib32-glibc-build
-    export CC="gcc -m32 -mstackrealign"
-    export CXX="g++ -m32 -mstackrealign"
-
-    # remove frame pointer flags due to crashes of nvidia driver on steam starts
-    # See https://gitlab.archlinux.org/archlinux/packaging/packages/glibc/-/issues/10
-    CFLAGS=${CFLAGS/-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer/}
-
-    echo "slibdir=/usr/lib32" >> configparms
-    echo "rtlddir=/usr/lib32" >> configparms
-    echo "sbindir=/usr/bin" >> configparms
-    echo "rootsbindir=/usr/bin" >> configparms
-
-    "${srcdir}"/glibc/configure \
-        --host=i686-pc-linux-gnu \
-        --libdir=/usr/lib32 \
-        --libexecdir=/usr/lib32 \
-        "${_configure_flags[@]}"
-
-    make -O
   )
 
   # pregenerate locales here instead of in package
@@ -136,6 +114,7 @@ check() (
   _skip_test tst-ntp_gettime         sysdeps/unix/sysv/linux/Makefile
   _skip_test tst-ntp_gettimex        sysdeps/unix/sysv/linux/Makefile
   _skip_test tst-pkey                sysdeps/unix/sysv/linux/Makefile
+  _skip_test tst-aarch64-pkey        sysdeps/unix/sysv/linux/aarch64/Makefile
   _skip_test tst-process_mrelease    sysdeps/unix/sysv/linux/Makefile
   _skip_test tst-shstk-legacy-1g     sysdeps/x86_64/Makefile
   _skip_test tst-adjtime             time/Makefile
@@ -187,31 +166,6 @@ package_glibc() {
   # libraries too. Useful for gdb's catch command.
   install -Dm644 "${srcdir}"/sdt.h "${pkgdir}"/usr/include/sys/sdt.h
   install -Dm644 "${srcdir}"/sdt-config.h "${pkgdir}"/usr/include/sys/sdt-config.h
-}
-
-package_lib32-glibc() {
-  pkgdesc='GNU C Library (32-bit)'
-  depends=("glibc=$pkgver")
-  options+=('!emptydirs')
-  install=lib32-glibc.install
-
-  cd lib32-glibc-build
-
-  make DESTDIR="${pkgdir}" install
-  rm -rf "${pkgdir}"/{etc,sbin,usr/{bin,sbin,share},var}
-
-  # We need to keep 32 bit specific header files
-  find "${pkgdir}"/usr/include -type f -not -name '*-32.h' -delete
-
-  # Dynamic linker
-  install -d "${pkgdir}"/usr/lib
-  ln -s ../lib32/ld-linux.so.2 "${pkgdir}"/usr/lib/
-
-  # Add lib32 paths to the default library search path
-  install -Dm644 "${srcdir}"/lib32-glibc.conf "${pkgdir}"/etc/ld.so.conf.d/lib32-glibc.conf
-
-  # Symlink /usr/lib32/locale to /usr/lib/locale
-  ln -s ../lib/locale "${pkgdir}"/usr/lib32/locale
 }
 
 package_glibc-locales() {

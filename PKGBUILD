@@ -15,7 +15,9 @@ arch=(aarch64)
 url='https://www.gnu.org/software/libc'
 license=(GPL-2.0-or-later LGPL-2.1-or-later)
 makedepends=(git gd python)
-options=(staticlibs !lto)
+# valgrind needs debug symbols in glibc because there is currently
+# no debuginfod data for aarch64 packages so use !strip
+options=(staticlibs !lto !strip)
 source=("git+https://sourceware.org/git/glibc.git#commit=${_commit}"
         locale.gen.txt
         locale-gen
